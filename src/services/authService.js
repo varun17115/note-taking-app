@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000/api/auth';
+const API_URL = 'http://localhost:5003/api/auth';
 
 export const login = async (credentials) => { 
   try {
@@ -10,18 +10,17 @@ export const login = async (credentials) => {
       body: JSON.stringify(credentials),
     });
     
-    const data = await response.json();
-    console.log('Login response data:', data); // Debug log
-    
     if (!response.ok) {
+      const data = await response.json();
       throw new Error(data.message || 'Login failed');
     }
+    
+    const data = await response.json();
     
     if (!data.user || !data.user.id) {
       throw new Error('Invalid user data received');
     }
     
-    console.log('Login response:', data); // Debug log
     localStorage.setItem('token', data.token);
     return data;
   } catch (error) {

@@ -2,14 +2,13 @@
   "name": "note-taking-app",
   "version": "0.1.0",
   "proxy": "http://localhost:5000",
-
   "private": true,
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "axios": "^1.7.9",
     "cors": "^2.8.5",
     "cra-template": "1.2.0",
-    "express": "^4.21.2", 
+    "express": "^4.21.2",
     "mongodb": "^6.13.0",
     "mongoose": "^8.10.1",
     "nodemon": "^3.1.9",
@@ -26,7 +25,7 @@
     "eject": "react-scripts eject",
     "server": "nodemon server.js",
     "dev": "concurrently \"npm start \" \"cd backend && node server.js\""
-  }, 
+  },
   "eslintConfig": {
     "extends": [
       "react-app",

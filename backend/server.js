@@ -18,16 +18,43 @@ app.use(cors({
 }));
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI , {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000,
+    family: 4  // Use IPv4, skip trying IPv6
 })
-  .then(() => console.log('Connected to MongoDB'))
-  .catch((err) => console.error('MongoDB connection error:', err));
+.then(() => {
+    console.log('Connected to MongoDB successfully');
+    // Create indexes for better performance
+    User.createIndexes();
+    Note.createIndexes();
+})
+.catch((err) => {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+});
+
+// Add connection event handlers
+mongoose.connection.on('connected', () => {
+    console.log('Mongoose connected to MongoDB');
+});
+
+mongoose.connection.on('error', (err) => {
+    console.error('Mongoose connection error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+    console.log('Mongoose disconnected from MongoDB');
+});
+
+process.on('SIGINT', async () => {
+    await mongoose.connection.close();
+    process.exit(0);
+});
 
 // Note Schema
 const noteSchema = new mongoose.Schema({
-  '_id': { type: String, required: true, unique: true },
   userId: { type: String, required: true },
   title: String,
   content: String,
@@ -39,7 +66,13 @@ const noteSchema = new mongoose.Schema({
   isFavorite: { type: Boolean, default: false },
   date: String,
   lastModified: String
+}, {
+  // Add timestamps for better tracking
+  timestamps: true
 });
+
+// Add compound index for userId and search
+noteSchema.index({ userId: 1, title: 'text', content: 'text' });
 
 const Note = mongoose.model('Note', noteSchema);
 
@@ -110,16 +143,23 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   try {
+    console.log('Login attempt');
     const { email, password } = req.body;
+    console.log('Login attempt for:', email); // Debug log
 
     // Find user
     const user = await User.findOne({ email });
+    console.log('User found:', user ? 'Yes' : 'No'); // Debug log
+
     if (!user) {
+      console.log('No user found with email:', email); // Debug log
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
+    console.log('Password match:', isMatch ? 'Yes' : 'No'); // Debug log
+
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
@@ -134,6 +174,8 @@ app.post('/api/auth/login', async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    console.log('Login successful for:', email); // Debug log
+
     res.json({ 
       token, 
       user: { 
@@ -143,6 +185,7 @@ app.post('/api/auth/login', async (req, res) => {
       } 
     });
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -191,13 +234,14 @@ app.post('/api/notes', auth, async (req, res) => {
   try {
     const note = new Note({
       ...req.body,
-      // '_id':ObjectId,
-      userId: req.user.userId // Add userId to new notes
+      userId: req.user.userId,
+      date: new Date().toISOString(),
+      lastModified: new Date().toISOString()
     });
     const savedNote = await note.save();
     res.status(201).json(savedNote);
   } catch (error) {
-    console.error('Create note error:', error); // Add debug log
+    console.error('Create note error:', error);
     res.status(400).json({ message: error.message });
   }
 });
@@ -243,7 +287,11 @@ app.put('/api/notes/:id', auth, async (req, res) => {
   }
 });
 
-const PORT = 5003;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+const PORT = process.env.PORT || 5003;
+app.listen(PORT, '0.0.0.0', (error) => {
+    if (error) { 
+        console.error('Error starting server:', error);
+        return;
+    }
+    console.log(`Server is running on http://localhost:${PORT}`);
 });
