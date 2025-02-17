@@ -2,7 +2,7 @@
 const mongoose = require('mongoose');
 
 // MongoDB connection URI
-const uri = "mongodb://localhost:27017/note_app";
+const uri = process.env.MONGODB_URI;
 
 // Define Note Schema
 const noteSchema = new mongoose.Schema({

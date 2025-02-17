@@ -1,6 +1,6 @@
 const API_URL = 'http://localhost:5000/api/auth';
 
-export const login = async (credentials) => {
+export const login = async (credentials) => { 
   try {
     const response = await fetch(`${API_URL}/login`, {
       method: 'POST',
@@ -36,7 +36,7 @@ export const register = async (userData) => {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(userData),
+    body: JSON.stringify({ ...userData, token: localStorage.getItem('token') }),
   });
   
   if (!response.ok) {
