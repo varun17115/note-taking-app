@@ -1,7 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env'), override: true });
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User');
@@ -16,9 +17,18 @@ app.use(cors({
     credentials: true
 }));
 
+// Add debug logging right after dotenv config
+// console.log('Environment variables loaded from:', path.resolve(__dirname, '../.env'));
+// console.log('MONGODB_URI:', process.env.MONGODB_URI);
+
+// // Add these debug lines
+// console.log("__dirname:", __dirname);
+// console.log(".env path:", path.resolve(__dirname, '../.env'));
+// console.log("All env variables:", process.env);
+// console.log("MongoDB URI from env:", process.env.MONGODB_URI);
+
 // MongoDB Connection
-console.log(process.env.MONGODB_URI);
-mongoose.connect(process.env.MONGODB_URI, {
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/note_app', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     serverSelectionTimeoutMS: 5000,
@@ -28,7 +38,7 @@ mongoose.connect(process.env.MONGODB_URI, {
     w: 'majority'
 })
 .then(() => {
-    console.log('Connected to MongoDB successfully');
+    console.log('Connected to MongoDB successfully using:', process.env.MONGODB_URI);
 })
 .catch((err) => {
     console.error('MongoDB connection error:', err);
@@ -293,7 +303,7 @@ app.put('/api/notes/:id', auth, async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 app.listen(PORT, '0.0.0.0', (error) => {
     if (error) { 
         console.error('Error starting server:', error);

@@ -8,24 +8,21 @@ const getAuthHeader = () => {
   };
 };
 
-export const getNotes = async ({ search = '', page = 1, limit = 10 } = {}) => {
+export const getNotes = async ({ search = '', sort = '-date' } = {}) => {
   try {
     const token = localStorage.getItem('token');
-    if (!token) throw new Error('No token found');
+    const queryParams = new URLSearchParams();
+    
+    if (search) queryParams.append('search', search);
+    if (sort) queryParams.append('sort', sort);
 
-    const response = await fetch(
-      `${API_URL}/notes?search=${encodeURIComponent(search)}&page=${page}&limit=${limit}`, 
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+    const response = await fetch(`${API_URL}/notes?${queryParams}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
-    );
+    });
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch notes');
-    }
-
+    if (!response.ok) throw new Error('Failed to fetch notes');
     return await response.json();
   } catch (error) {
     console.error('Error fetching notes:', error);

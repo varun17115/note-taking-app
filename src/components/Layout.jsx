@@ -10,22 +10,26 @@ const Layout = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [sortOrder, setSortOrder] = useState('-date');
 
   // Debounce search query
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery);
-    }, 300); // 300ms delay
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Fetch notes when search changes
+  // Fetch notes when search or sort changes
   useEffect(() => {
     const fetchNotes = async () => {
       try {
         setLoading(true);
-        const response = await getNotes({ search: debouncedSearch });
+        const response = await getNotes({ 
+          search: debouncedSearch,
+          sort: sortOrder
+        });
         setNotes(response.notes);
       } catch (error) {
         console.error('Failed to fetch notes:', error);
@@ -35,15 +39,22 @@ const Layout = () => {
     };
 
     fetchNotes();
-  }, [debouncedSearch]);
+  }, [debouncedSearch, sortOrder]);
 
   const handleSearch = (query) => {
     setSearchQuery(query);
   };
 
+  const handleSort = (order) => {
+    setSortOrder(order);
+  };
+
   const handleNoteUpdate = async () => {
     try {
-      const response = await getNotes({ search: debouncedSearch });
+      const response = await getNotes({ 
+        search: debouncedSearch,
+        sort: sortOrder
+      });
       setNotes(response.notes);
     } catch (error) {
       console.error('Failed to update notes:', error);
@@ -58,7 +69,10 @@ const Layout = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <Header onSearch={handleSearch} />
+        <Header 
+          onSearch={handleSearch} 
+          onSort={handleSort}
+        />
         
         {/* Notes Container */}
         <div className="flex-1 overflow-auto p-4">

@@ -4,13 +4,35 @@ import { getNotes } from '../services/noteService';
 
 const NoteList = () => {
   const [notes, setNotes] = useState([]);
+  const [sortOrder, setSortOrder] = useState('desc');
 
-  const fetchNotes = async () => {
+  const handleSort = (order) => {
+    setSortOrder(order);
+    // Fetch notes with new sort order
+    fetchNotes({
+      sort: order === 'asc' ? 'date' : '-date'  // '-date' for descending, 'date' for ascending
+    });
+  };
+  const fetchNotes = async (params = {}) => {
     try {
-      const data = await getNotes();
+      const token = localStorage.getItem('token');
+      const queryParams = new URLSearchParams({
+        sort: params.sort || (sortOrder === 'desc' ? '-date' : 'date'),
+        // ... other existing params ...
+      });
+
+      const response = await fetch(`/api/notes?${queryParams}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch notes');
+      
+      const data = await response.json();
       setNotes(data.notes);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error fetching notes:', error);
     }
   };
 
