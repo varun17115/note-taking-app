@@ -8,7 +8,6 @@ const User = require('./models/User');
 
 const app = express();
 
-// Increase header and payload limits - add these before other middleware
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cors({
@@ -18,17 +17,18 @@ app.use(cors({
 }));
 
 // MongoDB Connection
+console.log(process.env.MONGODB_URI);
 mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     serverSelectionTimeoutMS: 5000,
-    family: 4  // Use IPv4, skip trying IPv6
+    socketTimeoutMS: 45000,
+    family: 4,
+    retryWrites: true,
+    w: 'majority'
 })
 .then(() => {
     console.log('Connected to MongoDB successfully');
-    // Create indexes for better performance
-    User.createIndexes();
-    Note.createIndexes();
 })
 .catch((err) => {
     console.error('MongoDB connection error:', err);
@@ -37,8 +37,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 
 // Add connection event handlers
 mongoose.connection.on('connected', () => {
-    console.log('Mongoose connected to MongoDB');
-});
+  console.log('Mongoose connected to MongoDB')});
 
 mongoose.connection.on('error', (err) => {
     console.error('Mongoose connection error:', err);
@@ -49,8 +48,14 @@ mongoose.connection.on('disconnected', () => {
 });
 
 process.on('SIGINT', async () => {
-    await mongoose.connection.close();
-    process.exit(0);
+    try {
+        await mongoose.connection.close();
+        console.log('Mongoose connection closed through app termination');
+        process.exit(0);
+    } catch (err) {
+        console.error('Error closing Mongoose connection:', err);
+        process.exit(1);
+    }
 });
 
 // Note Schema
@@ -96,6 +101,7 @@ const auth = async (req, res, next) => {
 
 // Auth Routes
 app.post('/api/auth/register', async (req, res) => {
+  console.log('Register attempt');
   try {
     const { email, password, name } = req.body;
     
@@ -287,7 +293,7 @@ app.put('/api/notes/:id', auth, async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 5003;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', (error) => {
     if (error) { 
         console.error('Error starting server:', error);

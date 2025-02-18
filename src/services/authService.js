@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5003/api/auth';
+const API_URL = 'http://localhost:3000/api/auth';
 
 export const login = async (credentials) => { 
   try {
@@ -35,7 +35,7 @@ export const register = async (userData) => {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ ...userData, token: localStorage.getItem('token') }),
+    body: JSON.stringify(userData),
   });
   
   if (!response.ok) {

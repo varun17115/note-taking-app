@@ -21,9 +21,8 @@ const Footer = () => {
     useEffect(() => {
         try {
             const userData = JSON.parse(localStorage.getItem('user'));
-            console.log('User data from localStorage:', userData); // Debug log
             if (!userData || !userData.id) {
-                throw new Error('Invalid user data');
+                throw new Error('No valid user data found');
             }
             setUser(userData);
         } catch (error) {
@@ -129,49 +128,51 @@ const Footer = () => {
             recognitionRef.current?.stop();
             
             mediaRecorderRef.current.onstop = async () => {
-                // Create audio blob from chunks with optimized format
-                const audioBlob = new Blob(audioChunksRef.current, { 
-                    type: 'audio/webm;codecs=opus' 
-                });
-                
-                // Compress the audio before converting to base64
                 try {
+                    // Check for user data before proceeding
+                    if (!user || !user.id) {
+                        throw new Error('No valid user data');
+                    }
+
+                    const audioBlob = new Blob(audioChunksRef.current, { 
+                        type: 'audio/webm;codecs=opus' 
+                    });
+                    
                     const compressedBlob = await compressAudio(audioBlob);
                     const reader = new FileReader();
                     reader.readAsDataURL(compressedBlob);
                     
                     reader.onloadend = async () => {
-                        const base64Audio = reader.result;
-                        
-                        // Create note with audio data
-                        const currentTime = new Date();
-                        const newNote = {
-                            _id: Math.random().toString(36).substr(2, 9),
-                            title: `Voice Note - ${currentTime.toLocaleTimeString()}`,
-                            content: transcribedText || 'No transcription available',
-                            type: 'recording',
-                            time: currentTime.toLocaleTimeString(),
-                            date: currentTime.toISOString(),
-                            duration: formatDuration(recordingDuration),
-                            audioData: base64Audio,
-                            userId: user.id,
-                            images: [],
-                            lastModified: currentTime.toISOString()
-                        };
-
                         try {
+                            const base64Audio = reader.result;
+                            const currentTime = new Date();
+                            
+                            const newNote = {
+                                title: `Voice Note - ${currentTime.toLocaleTimeString()}`,
+                                content: transcribedText || 'No transcription available',
+                                type: 'recording',
+                                time: currentTime.toLocaleTimeString(),
+                                date: currentTime.toISOString(),
+                                duration: formatDuration(recordingDuration),
+                                audioData: base64Audio,
+                                userId: user.id,
+                                images: [],
+                                lastModified: currentTime.toISOString()
+                            };
+
                             await createNote(newNote);
                             setTranscribedText('');
                             setRecordingDuration(0);
                             window.location.reload();
                         } catch (error) {
                             console.error('Failed to create note:', error);
-                            alert('Failed to create note. The recording might be too long.');
+                            alert('Failed to create note. Please try again.');
                         }
                     };
                 } catch (error) {
-                    console.error('Failed to compress audio:', error);
-                    alert('Failed to process audio recording');
+                    console.error('Error in stopRecording:', error);
+                    alert('Error creating note. Please make sure you are logged in.');
+                    window.location.href = '/login';
                 }
             };
             
@@ -230,13 +231,13 @@ const Footer = () => {
         e.preventDefault();
         try {
             if (!user || !user.id) {
-                console.error('No user data found:', user); // Debug log
-                throw new Error('User not found');
+                throw new Error('No valid user data');
             }
 
             const newNote = {
-                _id: Math.random().toString(36).substr(2, 9),
-                ...noteData,
+                title: noteData.title,
+                content: noteData.content,
+                type: noteData.type,
                 time: new Date().toLocaleTimeString(),
                 date: new Date().toISOString(),
                 images: [],
@@ -245,13 +246,13 @@ const Footer = () => {
                 lastModified: new Date().toISOString()
             };
             
-            console.log('Creating note:', newNote); // Debug log
             await createNote(newNote);
             setIsModalOpen(false);
             window.location.reload();
         } catch (error) {
             console.error('Failed to create note:', error);
-            alert('Failed to create note. Please try logging in again.');
+            alert('Failed to create note. Please make sure you are logged in.');
+            window.location.href = '/login';
         }
     };
 

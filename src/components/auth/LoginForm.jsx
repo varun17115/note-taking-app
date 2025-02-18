@@ -21,13 +21,21 @@ const LoginForm = () => {
     e.preventDefault();
     try {
       const data = await login(formData);
-      console.log('Login response:', data); // Debug log
+      
+      // Save token and user details in localStorage
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify({
         id: data.user.id,
         email: data.user.email,
         name: data.user.name
       }));
+
+      console.log('Saved user data:', {
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name
+      });
+
       navigate('/notes');
     } catch (error) {
       console.error('Login error:', error);

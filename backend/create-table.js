@@ -1,8 +1,5 @@
-
 const mongoose = require('mongoose');
-
-// MongoDB connection URI
-const uri = process.env.MONGODB_URI;
+require('dotenv').config();
 
 // Define Note Schema
 const noteSchema = new mongoose.Schema({
@@ -20,7 +17,8 @@ const noteSchema = new mongoose.Schema({
 const Note = mongoose.model('Note', noteSchema);
 
 // Connect to MongoDB
-mongoose.connect(uri)
+console.log(process.env.MONGODB_URI);
+mongoose.connect(process.env.MONGODB_URI)
   .then(async () => {
     console.log('Connected to MongoDB successfully');
     

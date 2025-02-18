@@ -27,7 +27,16 @@ const RegisterForm = () => {
     }
     try {
       const { confirmPassword, ...registerData } = formData;
-      await register(registerData);
+      const data = await register(registerData);
+      
+      // Save token and user details in localStorage
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify({
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name
+      }));
+
       navigate('/notes');
     } catch (error) {
       setError('Registration failed. Please try again.');
